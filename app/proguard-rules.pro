@@ -1,0 +1,12 @@
+-keep class * extends androidx.room.RoomDatabase { *; }
+-keep @interface androidx.room.*
+-keep class org.gallery.swiper.data.entity.** { *; }
+-keep class org.gallery.swiper.data.model.** { *; }
+-keep class org.gallery.swiper.data.DecisionConverter { *; }
+-keepclassmembers enum org.gallery.swiper.data.model.Decision { *; }
+-keep class androidx.lifecycle.** { *; }
+-keep class kotlinx.coroutines.** { *; }
+-keep class coil.decode.VideoFrameDecoder { *; }
+-keep class androidx.media3.** { *; }
+-dontwarn androidx.media3.**
+-dontwarn org.gallery.swiper.**

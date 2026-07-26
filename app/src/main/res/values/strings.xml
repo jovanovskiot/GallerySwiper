@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gallery Swiper</string>
+    <string name="keep">Keep</string>
+    <string name="delete">Delete</string>
+    <string name="bookmark">Bookmark</string>
+    <string name="undo">Undo</string>
+    <string name="back">Back</string>
+    <string name="stats">Stats</string>
+    <string name="bookmarks">Bookmarks</string>
+    <string name="review_decisions">Review Decisions</string>
+    <string name="no_photos_month">No photos found in this month</string>
+    <string name="month_complete">Month complete!</string>
+    <string name="review_confirm">Review &amp; Confirm</string>
+    <string name="photo_access_required">Photo access required</string>
+    <string name="photo_access_description">Gallery Swiper needs access to your photos to help you clean them up.</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="no_photos_found">No photos found</string>
+    <string name="done">Done!</string>
+    <string name="deleted_photos">Deleted %1$d photos</string>
+    <string name="back_to_home">Back to Home</string>
+    <string name="moving_to_trash">Moving to trash…</string>
+    <string name="photos_to_delete">Photos to Delete (%1$d)</string>
+    <string name="photos_to_keep">Photos to Keep (%1$d)</string>
+    <string name="no_photos_marked_delete">No photos marked for deletion</string>
+    <string name="no_photos_marked_keep">No photos marked to keep</string>
+    <string name="confirm_nothing_to_delete">Confirm (Nothing to Delete)</string>
+    <string name="go_back">Go Back</string>
+    <string name="no_bookmarked_photos">No bookmarked photos yet.\nBookmark photos while swiping to save them here.</string>
+    <string name="bookmark_removed">Bookmark removed</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+</resources>

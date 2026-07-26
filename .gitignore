@@ -1,0 +1,31 @@
+# Android build
+build/
+app/build/
+*.apk
+*.aab
+*.ap_
+
+# Gradle
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+local.properties
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+.vscode/
+
+# OS
+*.swp
+*.swo
+*~
+
+# Misc
+/captures
+.externalNativeBuild/
+.cxx/
+*.log
+*.hprof
