@@ -68,7 +68,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     .coerceAtMost(month.totalCount)
                 month.copy(
                     reviewedCount = totalReviewed,
-                    keptCount = (pendingKept + committed).coerceAtMost(month.totalCount),
+                    keptCount = pendingKept.coerceAtMost(month.totalCount),
                     deletedCount = pendingDeleted,
                 )
             }

@@ -1,10 +1,9 @@
 package org.gallery.swiper.ui.review
 
 import android.app.Application
-import android.content.ContentUris
 import android.content.IntentSender
 import android.net.Uri
-import android.provider.MediaStore
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -15,11 +14,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.gallery.swiper.data.AppDatabase
 import org.gallery.swiper.data.entity.BookmarkEntity
+import org.gallery.swiper.data.entity.StatsEntity
 import org.gallery.swiper.data.entity.SwipeDecisionEntity
 import org.gallery.swiper.data.model.Decision
 import org.gallery.swiper.data.model.Photo
 import org.gallery.swiper.data.repository.PhotoRepository
-import java.util.Calendar
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 data class ReviewUiState(
     val keepPhotos: List<Photo> = emptyList(),
@@ -87,18 +89,22 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun updateInDb(photo: Photo, decision: Decision) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                swipeDecisionDao.removeDecision(photo.id, monthKey)
-                swipeDecisionDao.upsert(
-                    SwipeDecisionEntity(
-                        monthKey = monthKey,
-                        photoId = photo.id,
-                        uri = photo.uri.toString(),
-                        decision = decision.name,
-                        size = photo.size,
-                        isCommitted = false,
+            try {
+                withContext(Dispatchers.IO) {
+                    swipeDecisionDao.removeDecision(photo.id, monthKey)
+                    swipeDecisionDao.upsert(
+                        SwipeDecisionEntity(
+                            monthKey = monthKey,
+                            photoId = photo.id,
+                            uri = photo.uri.toString(),
+                            decision = decision.name,
+                            size = photo.size,
+                            isCommitted = false,
+                        )
                     )
-                )
+                }
+            } catch (e: Exception) {
+                Log.e("ReviewViewModel", "Failed to update decision", e)
             }
         }
     }
@@ -106,7 +112,7 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
     fun requestCommit() {
         val state = _uiState.value
         if (state.deletePhotos.isEmpty()) {
-            commitConfirmed()
+            commitConfirmed(fromIntentSender = false)
             return
         }
 
@@ -117,10 +123,10 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
 
-        commitConfirmed()
+        commitConfirmed(fromIntentSender = false)
     }
 
-    fun commitConfirmed() {
+    fun commitConfirmed(fromIntentSender: Boolean = false) {
         _uiState.value = _uiState.value.copy(isCommitting = true, intentSender = null)
         viewModelScope.launch {
             val state = _uiState.value
@@ -133,12 +139,9 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                 state.deletePhotos.forEach { photo ->
                     finalDecisions.add(
                         SwipeDecisionEntity(
-                            monthKey = monthKey,
-                            photoId = photo.id,
-                            uri = photo.uri.toString(),
-                            decision = Decision.DELETE.name,
-                            size = photo.size,
-                            isCommitted = true,
+                            monthKey = monthKey, photoId = photo.id,
+                            uri = photo.uri.toString(), decision = Decision.DELETE.name,
+                            size = photo.size, isCommitted = true,
                         )
                     )
                 }
@@ -146,27 +149,26 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                     val d = if (bookmarkedPhotoIds.contains(photo.id)) Decision.BOOKMARK else Decision.KEEP
                     finalDecisions.add(
                         SwipeDecisionEntity(
-                            monthKey = monthKey,
-                            photoId = photo.id,
-                            uri = photo.uri.toString(),
-                            decision = d.name,
-                            size = photo.size,
-                            isCommitted = true,
+                            monthKey = monthKey, photoId = photo.id,
+                            uri = photo.uri.toString(), decision = d.name,
+                            size = photo.size, isCommitted = true,
                         )
                     )
                 }
 
-                // Atomically replace month decisions
                 swipeDecisionDao.replaceMonth(monthKey, finalDecisions)
 
-                // Move photos to trash (after DB is safely updated)
-                val deleteUris = state.deletePhotos.map { it.uri }
-                if (deleteUris.isNotEmpty()) {
-                    repository.sendToTrash(deleteUris)
+                // Only trash files when NOT coming from the IntentSender path
+                // (IntentSender already handled trashing via system dialog)
+                if (!fromIntentSender) {
+                    val deleteUris = state.deletePhotos.map { it.uri }
+                    if (deleteUris.isNotEmpty()) {
+                        repository.sendToTrash(deleteUris)
+                    }
                 }
 
-                // Stats
-                statsDao.upsert(org.gallery.swiper.data.entity.StatsEntity())
+                // Initialize stats row only if it doesn't exist yet (IGNORE)
+                statsDao.initIfEmpty(StatsEntity())
                 statsDao.addReviewed(deletedCount + keptCount)
                 statsDao.addDeleted(deletedCount, deletedSpace)
                 statsDao.addKept(keptCount)
@@ -175,25 +177,27 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                 val today = System.currentTimeMillis()
                 if (lastDate == null) {
                     statsDao.resetStreak(today)
-                } else if (today - lastDate < 48 * 60 * 60 * 1000L) {
-                    statsDao.incrementStreak(today)
                 } else {
-                    statsDao.resetStreak(today)
+                    val todayDate = LocalDate.now(ZoneId.systemDefault())
+                    val lastDateLocal = Instant.ofEpochMilli(lastDate)
+                        .atZone(ZoneId.systemDefault()).toLocalDate()
+                    if (todayDate.dayOfYear == lastDateLocal.dayOfYear && todayDate.year == lastDateLocal.year) {
+                        // Same day, no streak change
+                    } else if (todayDate.minusDays(1) == lastDateLocal) {
+                        statsDao.incrementStreak(today)
+                    } else {
+                        statsDao.resetStreak(today)
+                    }
                 }
 
-                // Only bookmark originally bookmarked photos
                 bookmarkedPhotoIds.forEach { pid ->
                     val photo = state.keepPhotos.find { it.id == pid }
                     if (photo != null) {
                         bookmarkDao.insert(
                             BookmarkEntity(
-                                photoId = photo.id,
-                                uri = photo.uri.toString(),
-                                dateTaken = photo.dateTaken,
-                                mimeType = photo.mimeType,
-                                width = photo.width,
-                                height = photo.height,
-                                size = photo.size,
+                                photoId = photo.id, uri = photo.uri.toString(),
+                                dateTaken = photo.dateTaken, mimeType = photo.mimeType,
+                                width = photo.width, height = photo.height, size = photo.size,
                             )
                         )
                     }
@@ -209,13 +213,9 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun entityToPhoto(entity: SwipeDecisionEntity): Photo {
-        val thumbUri = ContentUris.withAppendedId(
-            MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI, entity.photoId
-        )
         return Photo(
             id = entity.photoId,
             uri = Uri.parse(entity.uri),
-            thumbnailUri = thumbUri,
             dateTaken = 0, size = entity.size,
             mimeType = "image/*", width = 0, height = 0,
         )

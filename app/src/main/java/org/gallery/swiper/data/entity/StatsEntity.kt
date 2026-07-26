@@ -1,5 +1,3 @@
-@file:Suppress("Unused")
-
 package org.gallery.swiper.data.entity
 
 import androidx.room.Entity

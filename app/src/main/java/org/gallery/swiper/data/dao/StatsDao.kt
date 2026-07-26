@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface StatsDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(stats: StatsEntity)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun initIfEmpty(stats: StatsEntity)
 
     @Query("SELECT * FROM stats WHERE id = 1")
     fun getStats(): Flow<StatsEntity?>

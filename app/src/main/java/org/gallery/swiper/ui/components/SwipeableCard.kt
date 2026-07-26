@@ -21,6 +21,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -52,6 +54,7 @@ import coil.request.ImageRequest
 import kotlinx.coroutines.launch
 import org.gallery.swiper.ui.theme.DeleteRed
 import org.gallery.swiper.ui.theme.KeepGreen
+import kotlin.math.abs
 
 private const val SWIPE_THRESHOLD = 300f
 
@@ -61,13 +64,14 @@ fun SwipeableCard(
     isVideo: Boolean = false,
     onSwipeLeft: () -> Unit,
     onSwipeRight: () -> Unit,
-    onUndo: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onUndo: () -> Unit = {},
+    snackbarHostState: SnackbarHostState? = null,
 ) {
     var offsetX by remember(imageUri) { mutableFloatStateOf(0f) }
     val animOffset = remember(imageUri) { Animatable(0f) }
     val scope = rememberCoroutineScope()
-    val rawProgress = kotlin.math.abs(animOffset.value) / SWIPE_THRESHOLD
+    val rawProgress = abs(animOffset.value) / SWIPE_THRESHOLD
     val dismissProgress = rawProgress.coerceIn(0f, 1f)
     val context = LocalContext.current
 
@@ -98,7 +102,7 @@ fun SwipeableCard(
                 scaleX = (1f - (animOffset.value / (SWIPE_THRESHOLD * 2) * 0.05f)).coerceAtLeast(0.8f)
                 scaleY = (1f - (animOffset.value / (SWIPE_THRESHOLD * 2) * 0.05f)).coerceAtLeast(0.8f)
             }
-            .pointerInput(imageUri, isVideoPlaying) {
+            .pointerInput(imageUri) {
                 detectDragGestures(
                     onDrag = { change, dragAmount ->
                         change.consume()
@@ -106,7 +110,7 @@ fun SwipeableCard(
                         scope.launch { animOffset.snapTo(offsetX) }
                     },
                     onDragEnd = {
-                        if (kotlin.math.abs(offsetX) > SWIPE_THRESHOLD) {
+                        if (abs(offsetX) > SWIPE_THRESHOLD) {
                             if (offsetX > 0) onSwipeRight() else onSwipeLeft()
                         } else {
                             scope.launch {
@@ -124,7 +128,14 @@ fun SwipeableCard(
                 )
             }
             .pointerInput(imageUri) {
-                detectTapGestures { if (!isVideo) onUndo() }
+                detectTapGestures {
+                    if (!isVideo) {
+                        onUndo()
+                        scope.launch {
+                            snackbarHostState?.showSnackbar("Last decision undone")
+                        }
+                    }
+                }
             },
         contentAlignment = Alignment.Center,
     ) {
@@ -178,7 +189,7 @@ fun SwipeableCard(
                     ) {
                         Icon(
                             if (isVideoPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (isVideoPlaying) context.getString(org.gallery.swiper.R.string.pause) else context.getString(org.gallery.swiper.R.string.play),
+                            contentDescription = if (isVideoPlaying) "Pause" else "Play",
                             tint = Color.White,
                             modifier = Modifier.size(40.dp),
                         )

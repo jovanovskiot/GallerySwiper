@@ -23,6 +23,14 @@ local.properties
 *.swo
 *~
 
+# Signing & secrets
+*.keystore
+*.jks
+*.p12
+keystore.properties
+secrets.properties
+signing.properties
+
 # Misc
 /captures
 .externalNativeBuild/

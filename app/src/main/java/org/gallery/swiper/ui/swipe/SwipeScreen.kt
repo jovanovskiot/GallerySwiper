@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,7 +33,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -43,9 +41,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.ImageLoader
+import coil.imageLoader
 import coil.request.ImageRequest
-import coil.compose.LocalImageLoader
 import org.gallery.swiper.data.model.Decision
 import org.gallery.swiper.ui.components.SwipeableCard
 import org.gallery.swiper.ui.theme.BookmarkBlue
@@ -63,7 +60,6 @@ fun SwipeScreen(
     val state by viewModel.uiState.collectAsState()
     val navigateToReview by viewModel.navigateToReview.collectAsState()
     val context = LocalContext.current
-    val imageLoader = LocalImageLoader.current
 
     BackHandler {
         onBack()
@@ -84,7 +80,7 @@ fun SwipeScreen(
         val nextIndex = state.currentIndex + 1
         if (nextIndex < state.photos.size) {
             val nextPhoto = state.photos[nextIndex]
-            imageLoader?.enqueue(
+            context.imageLoader.enqueue(
                 ImageRequest.Builder(context)
                     .data(nextPhoto.uri)
                     .crossfade(true)

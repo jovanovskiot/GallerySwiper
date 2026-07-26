@@ -5,7 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
-import android.provider.MediaStore.Images.Media as ImagesMedia
+import android.provider.MediaStore.Images.Media
 import android.provider.MediaStore.Video.Media as VideoMedia
 import android.util.Log
 import org.gallery.swiper.data.model.Photo
@@ -39,28 +39,28 @@ class PhotoRepository(private val context: Context) {
         }
 
         val projection = arrayOf(
-            ImagesMedia._ID,
-            ImagesMedia.DATE_TAKEN,
-            ImagesMedia.DATE_MODIFIED,
-            ImagesMedia.SIZE,
-            ImagesMedia.MIME_TYPE,
-            ImagesMedia.WIDTH,
-            ImagesMedia.HEIGHT,
-            ImagesMedia.LATITUDE,
-            ImagesMedia.LONGITUDE,
+            Media._ID,
+            Media.DATE_TAKEN,
+            Media.DATE_MODIFIED,
+            Media.SIZE,
+            Media.MIME_TYPE,
+            Media.WIDTH,
+            Media.HEIGHT,
+            Media.LATITUDE,
+            Media.LONGITUDE,
         )
 
         try {
             resolver.query(uri, projection, null, null, null)?.use { cursor ->
-                val idCol = cursor.getColumnIndexOrThrow(ImagesMedia._ID)
-                val dateCol = cursor.getColumnIndexOrThrow(ImagesMedia.DATE_TAKEN)
-                val modifiedCol = cursor.getColumnIndex(ImagesMedia.DATE_MODIFIED)
-                val sizeCol = cursor.getColumnIndexOrThrow(ImagesMedia.SIZE)
-                val mimeCol = cursor.getColumnIndexOrThrow(ImagesMedia.MIME_TYPE)
-                val widthCol = cursor.getColumnIndex(ImagesMedia.WIDTH)
-                val heightCol = cursor.getColumnIndex(ImagesMedia.HEIGHT)
-                val latCol = cursor.getColumnIndex(ImagesMedia.LATITUDE)
-                val lonCol = cursor.getColumnIndex(ImagesMedia.LONGITUDE)
+                val idCol = cursor.getColumnIndexOrThrow(Media._ID)
+                val dateCol = cursor.getColumnIndexOrThrow(Media.DATE_TAKEN)
+                val modifiedCol = cursor.getColumnIndex(Media.DATE_MODIFIED)
+                val sizeCol = cursor.getColumnIndexOrThrow(Media.SIZE)
+                val mimeCol = cursor.getColumnIndexOrThrow(Media.MIME_TYPE)
+                val widthCol = cursor.getColumnIndex(Media.WIDTH)
+                val heightCol = cursor.getColumnIndex(Media.HEIGHT)
+                val latCol = cursor.getColumnIndex(Media.LATITUDE)
+                val lonCol = cursor.getColumnIndex(Media.LONGITUDE)
 
                 while (cursor.moveToNext()) {
                     val dateTaken = cursor.getLong(dateCol)
@@ -96,9 +96,9 @@ class PhotoRepository(private val context: Context) {
         val resolver = context.contentResolver
 
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+            VideoMedia.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            VideoMedia.EXTERNAL_CONTENT_URI
         }
 
         val projection = arrayOf(

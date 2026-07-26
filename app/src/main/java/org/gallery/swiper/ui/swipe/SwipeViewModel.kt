@@ -13,7 +13,6 @@ import org.gallery.swiper.data.AppDatabase
 import org.gallery.swiper.data.entity.SwipeDecisionEntity
 import org.gallery.swiper.data.model.Decision
 import org.gallery.swiper.data.model.Photo
-import org.gallery.swiper.data.model.PhotoMonth
 import org.gallery.swiper.data.repository.PhotoRepository
 import org.gallery.swiper.util.DateUtils
 
@@ -51,7 +50,7 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
                 swipeDecisionDao.getCommittedDecisions(monthKey)
             }
             val pendingMap = pendingDecisions.associate { entity ->
-                entity.photoId to Decision.valueOf(entity.decision)
+                entity.photoId to try { Decision.valueOf(entity.decision) } catch (_: Exception) { Decision.KEEP }
             }
 
             val startIndex = if (committedDecisions.size >= sortedPhotos.size) {
@@ -67,7 +66,7 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
                 photos = sortedPhotos,
                 currentIndex = startIndex,
                 monthKey = monthKey,
-                    monthLabel = DateUtils.formatMonthYear(month.year, month.month),
+                monthLabel = DateUtils.formatMonthYear(month.year, month.month),
                 decisions = pendingMap,
                 isFinished = startIndex >= sortedPhotos.size,
             )
@@ -111,7 +110,6 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 if (decision != null) {
-                    swipeDecisionDao.removeDecision(photo.id, state.monthKey)
                     swipeDecisionDao.upsert(
                         SwipeDecisionEntity(
                             monthKey = state.monthKey,

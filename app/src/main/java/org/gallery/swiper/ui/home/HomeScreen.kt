@@ -50,12 +50,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.gallery.swiper.R
 import org.gallery.swiper.data.model.PhotoMonth
 import org.gallery.swiper.ui.theme.DeleteRed
 import org.gallery.swiper.ui.theme.KeepGreen
@@ -98,27 +100,23 @@ fun HomeScreen(
         val allGranted = permissions.all {
             ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
         }
-        if (allGranted) {
-            viewModel.setPermissionGranted()
-        } else if (permissions.any {
-                ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-            }) {
+        if (!allGranted) {
             permissionLauncher.launch(permissions)
         } else {
-            permissionLauncher.launch(permissions)
+            viewModel.setPermissionGranted()
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gallery Swiper") },
+                title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     IconButton(onClick = onStatsClick) {
-                        Icon(Icons.Default.BarChart, contentDescription = "Stats")
+                        Icon(Icons.Default.BarChart, contentDescription = stringResource(R.string.stats))
                     }
                     IconButton(onClick = onBookmarksClick) {
-                        Icon(Icons.Default.Bookmark, contentDescription = "Bookmarks")
+                        Icon(Icons.Default.Bookmark, contentDescription = stringResource(R.string.bookmarks))
                     }
                 },
             )
@@ -138,18 +136,18 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            "Photo access required",
+                            stringResource(R.string.photo_access_required),
                             style = MaterialTheme.typography.headlineSmall,
                             textAlign = TextAlign.Center,
                         )
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            "Gallery Swiper needs access to your photos to help you clean them up.",
+                            stringResource(R.string.photo_access_description),
                             textAlign = TextAlign.Center,
                         )
                         Spacer(Modifier.height(24.dp))
                         Button(onClick = { permissionLauncher.launch(permissions) }) {
-                            Text("Grant Permission")
+                            Text(stringResource(R.string.grant_permission))
                         }
                         if (showSettingsButton) {
                             Spacer(Modifier.height(12.dp))
@@ -159,7 +157,7 @@ fun HomeScreen(
                                 }
                                 context.startActivity(intent)
                             }) {
-                                Text("Open Settings")
+                                Text(stringResource(R.string.open_settings))
                             }
                         }
                     }
@@ -177,7 +175,7 @@ fun HomeScreen(
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Text(
-                                        "No photos found",
+                                        stringResource(R.string.no_photos_found),
                                         style = MaterialTheme.typography.bodyLarge,
                                     )
                                 }
@@ -185,10 +183,7 @@ fun HomeScreen(
                         }
 
                         items(state.months, key = { it.key }) { month ->
-                            MonthCard(
-                                month = month,
-                                onClick = { onMonthClick(month.key) },
-                            )
+                            MonthCard(month = month, onClick = { onMonthClick(month.key) })
                         }
                     }
                 }

@@ -28,56 +28,37 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        private val MIGRATION_2_TO_3 = object : Migration(2, 3) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("""
-                    DELETE FROM swipe_decisions WHERE id NOT IN (
-                        SELECT MAX(id) FROM swipe_decisions
-                        WHERE isCommitted = 0
-                        GROUP BY photoId, monthKey
-                    )
-                """)
-                db.execSQL("""
-                    DELETE FROM swipe_decisions WHERE id NOT IN (
-                        SELECT MAX(id) FROM swipe_decisions
-                        WHERE isCommitted = 1
-                        GROUP BY photoId, monthKey
-                    )
-                """)
-                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_swipe_decisions_photo_month ON swipe_decisions(photoId, monthKey)")
-            }
+        private fun deduplicateAndCreateIndex(db: SupportSQLiteDatabase) {
+            db.execSQL("""
+                DELETE FROM swipe_decisions WHERE id NOT IN (
+                    SELECT MAX(id) FROM swipe_decisions
+                    WHERE isCommitted = 0
+                    GROUP BY photoId, monthKey
+                )
+            """)
+            db.execSQL("""
+                DELETE FROM swipe_decisions WHERE id NOT IN (
+                    SELECT MAX(id) FROM swipe_decisions
+                    WHERE isCommitted = 1
+                    GROUP BY photoId, monthKey
+                )
+            """)
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_swipe_decisions_photo_month ON swipe_decisions(photoId, monthKey)")
         }
 
-        private val MIGRATION_3_TO_4 = object : Migration(3, 4) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("""
-                    DELETE FROM swipe_decisions WHERE id NOT IN (
-                        SELECT MAX(id) FROM swipe_decisions
-                        WHERE isCommitted = 0
-                        GROUP BY photoId, monthKey
-                    )
-                """)
-                db.execSQL("""
-                    DELETE FROM swipe_decisions WHERE id NOT IN (
-                        SELECT MAX(id) FROM swipe_decisions
-                        WHERE isCommitted = 1
-                        GROUP BY photoId, monthKey
-                    )
-                """)
-                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_swipe_decisions_photo_month ON swipe_decisions(photoId, monthKey)")
-            }
+        private val MIGRATE_SCHEMA = object : Migration(2, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) { deduplicateAndCreateIndex(db) }
         }
 
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+                INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "gallery_swiper.db"
-                ).addMigrations(MIGRATION_2_TO_3, MIGRATION_3_TO_4)
+                ).addMigrations(MIGRATE_SCHEMA)
                     .build()
-                INSTANCE = instance
-                instance
+                    .also { INSTANCE = it }
             }
         }
     }

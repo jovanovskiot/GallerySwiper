@@ -36,7 +36,7 @@ Gallery Swiper **never uploads, shares, or processes your photos anywhere**. Eve
 ### Steps
 
 ```bash
-git clone https://github.com/your-username/gallery-swiper.git
+git clone https://github.com/jovanovskiot/gallery-swiper.git
 cd gallery-swiper
 ./gradlew assembleDebug
 ```
