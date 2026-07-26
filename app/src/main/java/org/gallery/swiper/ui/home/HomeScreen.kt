@@ -163,6 +163,28 @@ fun HomeScreen(
                     }
                 }
 
+                state.error != null -> {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center).padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            "Error loading photos",
+                            style = MaterialTheme.typography.headlineSmall,
+                            textAlign = TextAlign.Center,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            state.error ?: "",
+                            textAlign = TextAlign.Center,
+                        )
+                        Spacer(Modifier.height(24.dp))
+                        Button(onClick = { viewModel.loadData() }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+
                 else -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),

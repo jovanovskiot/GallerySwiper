@@ -23,8 +23,22 @@ class PhotoRepository(private val context: Context) {
 
     fun loadAllPhotos(): List<Photo> {
         val photos = mutableListOf<Photo>()
-        photos.addAll(loadImages())
-        photos.addAll(loadVideos())
+        var imagesFailed = false
+        var videosFailed = false
+
+        try { photos.addAll(loadImages()) } catch (e: Exception) {
+            Log.e("PhotoRepository", "Failed to load images", e)
+            imagesFailed = true
+        }
+        try { photos.addAll(loadVideos()) } catch (e: Exception) {
+            Log.e("PhotoRepository", "Failed to load videos", e)
+            videosFailed = true
+        }
+
+        if (photos.isEmpty() && (imagesFailed || videosFailed)) {
+            throw RuntimeException("Failed to load photos and videos from MediaStore")
+        }
+
         return photos.sortedByDescending { it.dateTaken }
     }
 
@@ -50,42 +64,41 @@ class PhotoRepository(private val context: Context) {
             Media.LONGITUDE,
         )
 
-        try {
-            resolver.query(uri, projection, null, null, null)?.use { cursor ->
-                val idCol = cursor.getColumnIndexOrThrow(Media._ID)
-                val dateCol = cursor.getColumnIndexOrThrow(Media.DATE_TAKEN)
-                val modifiedCol = cursor.getColumnIndex(Media.DATE_MODIFIED)
-                val sizeCol = cursor.getColumnIndexOrThrow(Media.SIZE)
-                val mimeCol = cursor.getColumnIndexOrThrow(Media.MIME_TYPE)
-                val widthCol = cursor.getColumnIndex(Media.WIDTH)
-                val heightCol = cursor.getColumnIndex(Media.HEIGHT)
-                val latCol = cursor.getColumnIndex(Media.LATITUDE)
-                val lonCol = cursor.getColumnIndex(Media.LONGITUDE)
+        val cursor = resolver.query(uri, projection, null, null, null)
+            ?: throw RuntimeException("MediaStore images query returned null")
 
-                while (cursor.moveToNext()) {
-                    val dateTaken = cursor.getLong(dateCol)
-                    val dateModified = if (modifiedCol >= 0) cursor.getLong(modifiedCol) else 0L
-                    val date = if (dateTaken > 0) dateTaken else dateModified * 1000L
-                    val id = cursor.getLong(idCol)
-                    val photoUri = ContentUris.withAppendedId(uri, id)
+        cursor.use { cursor ->
+            val idCol = cursor.getColumnIndexOrThrow(Media._ID)
+            val dateCol = cursor.getColumnIndexOrThrow(Media.DATE_TAKEN)
+            val modifiedCol = cursor.getColumnIndex(Media.DATE_MODIFIED)
+            val sizeCol = cursor.getColumnIndexOrThrow(Media.SIZE)
+            val mimeCol = cursor.getColumnIndexOrThrow(Media.MIME_TYPE)
+            val widthCol = cursor.getColumnIndex(Media.WIDTH)
+            val heightCol = cursor.getColumnIndex(Media.HEIGHT)
+            val latCol = cursor.getColumnIndex(Media.LATITUDE)
+            val lonCol = cursor.getColumnIndex(Media.LONGITUDE)
 
-                    photos.add(
-                        Photo(
-                            id = id,
-                            uri = photoUri,
-                            dateTaken = date,
-                            size = cursor.getLong(sizeCol),
-                            mimeType = cursor.getString(mimeCol) ?: "image/*",
-                            width = if (widthCol >= 0) cursor.getInt(widthCol) else 0,
-                            height = if (heightCol >= 0) cursor.getInt(heightCol) else 0,
-                            latitude = if (latCol >= 0 && !cursor.isNull(latCol)) cursor.getDouble(latCol) else null,
-                            longitude = if (lonCol >= 0 && !cursor.isNull(lonCol)) cursor.getDouble(lonCol) else null,
-                        )
+            while (cursor.moveToNext()) {
+                val dateTaken = cursor.getLong(dateCol)
+                val dateModified = if (modifiedCol >= 0) cursor.getLong(modifiedCol) else 0L
+                val date = if (dateTaken > 0) dateTaken else dateModified * 1000L
+                val id = cursor.getLong(idCol)
+                val photoUri = ContentUris.withAppendedId(uri, id)
+
+                photos.add(
+                    Photo(
+                        id = id,
+                        uri = photoUri,
+                        dateTaken = date,
+                        size = cursor.getLong(sizeCol),
+                        mimeType = cursor.getString(mimeCol) ?: "image/*",
+                        width = if (widthCol >= 0) cursor.getInt(widthCol) else 0,
+                        height = if (heightCol >= 0) cursor.getInt(heightCol) else 0,
+                        latitude = if (latCol >= 0 && !cursor.isNull(latCol)) cursor.getDouble(latCol) else null,
+                        longitude = if (lonCol >= 0 && !cursor.isNull(lonCol)) cursor.getDouble(lonCol) else null,
                     )
-                }
-            } ?: Log.w("PhotoRepository", "MediaStore images query returned null")
-        } catch (e: Exception) {
-            Log.e("PhotoRepository", "Failed to load images", e)
+                )
+            }
         }
 
         return photos
@@ -111,38 +124,37 @@ class PhotoRepository(private val context: Context) {
             VideoMedia.HEIGHT,
         )
 
-        try {
-            resolver.query(uri, projection, null, null, null)?.use { cursor ->
-                val idCol = cursor.getColumnIndexOrThrow(VideoMedia._ID)
-                val dateCol = cursor.getColumnIndexOrThrow(VideoMedia.DATE_TAKEN)
-                val modifiedCol = cursor.getColumnIndex(VideoMedia.DATE_MODIFIED)
-                val sizeCol = cursor.getColumnIndexOrThrow(VideoMedia.SIZE)
-                val mimeCol = cursor.getColumnIndexOrThrow(VideoMedia.MIME_TYPE)
-                val widthCol = cursor.getColumnIndex(VideoMedia.WIDTH)
-                val heightCol = cursor.getColumnIndex(VideoMedia.HEIGHT)
+        val cursor = resolver.query(uri, projection, null, null, null)
+            ?: throw RuntimeException("MediaStore videos query returned null")
 
-                while (cursor.moveToNext()) {
-                    val dateTaken = cursor.getLong(dateCol)
-                    val dateModified = if (modifiedCol >= 0) cursor.getLong(modifiedCol) else 0L
-                    val date = if (dateTaken > 0) dateTaken else dateModified * 1000L
-                    val id = cursor.getLong(idCol)
-                    val videoUri = ContentUris.withAppendedId(uri, id)
+        cursor.use { cursor ->
+            val idCol = cursor.getColumnIndexOrThrow(VideoMedia._ID)
+            val dateCol = cursor.getColumnIndexOrThrow(VideoMedia.DATE_TAKEN)
+            val modifiedCol = cursor.getColumnIndex(VideoMedia.DATE_MODIFIED)
+            val sizeCol = cursor.getColumnIndexOrThrow(VideoMedia.SIZE)
+            val mimeCol = cursor.getColumnIndexOrThrow(VideoMedia.MIME_TYPE)
+            val widthCol = cursor.getColumnIndex(VideoMedia.WIDTH)
+            val heightCol = cursor.getColumnIndex(VideoMedia.HEIGHT)
 
-                    photos.add(
-                        Photo(
-                            id = id,
-                            uri = videoUri,
-                            dateTaken = date,
-                            size = cursor.getLong(sizeCol),
-                            mimeType = cursor.getString(mimeCol) ?: "video/*",
-                            width = if (widthCol >= 0) cursor.getInt(widthCol) else 0,
-                            height = if (heightCol >= 0) cursor.getInt(heightCol) else 0,
-                        )
+            while (cursor.moveToNext()) {
+                val dateTaken = cursor.getLong(dateCol)
+                val dateModified = if (modifiedCol >= 0) cursor.getLong(modifiedCol) else 0L
+                val date = if (dateTaken > 0) dateTaken else dateModified * 1000L
+                val id = cursor.getLong(idCol)
+                val videoUri = ContentUris.withAppendedId(uri, id)
+
+                photos.add(
+                    Photo(
+                        id = id,
+                        uri = videoUri,
+                        dateTaken = date,
+                        size = cursor.getLong(sizeCol),
+                        mimeType = cursor.getString(mimeCol) ?: "video/*",
+                        width = if (widthCol >= 0) cursor.getInt(widthCol) else 0,
+                        height = if (heightCol >= 0) cursor.getInt(heightCol) else 0,
                     )
-                }
-            } ?: Log.w("PhotoRepository", "MediaStore videos query returned null")
-        } catch (e: Exception) {
-            Log.e("PhotoRepository", "Failed to load videos", e)
+                )
+            }
         }
 
         return photos
