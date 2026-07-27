@@ -1,5 +1,6 @@
 package org.gallery.swiper.data.repository
 
+import android.annotation.SuppressLint
 import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
@@ -16,6 +17,7 @@ import java.time.ZoneId
 
 class PhotoRepository private constructor(private val context: Context) {
 
+    @SuppressLint("StaticFieldLeak")
     companion object {
         @Volatile
         private var INSTANCE: PhotoRepository? = null
@@ -67,9 +69,9 @@ class PhotoRepository private constructor(private val context: Context) {
         val resolver = context.contentResolver
 
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+            Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            Media.EXTERNAL_CONTENT_URI
         }
 
         val projection = arrayOf(
@@ -80,8 +82,6 @@ class PhotoRepository private constructor(private val context: Context) {
             Media.MIME_TYPE,
             Media.WIDTH,
             Media.HEIGHT,
-            Media.LATITUDE,
-            Media.LONGITUDE,
         )
 
         val cursor = resolver.query(uri, projection, null, null, null)
@@ -95,8 +95,6 @@ class PhotoRepository private constructor(private val context: Context) {
             val mimeCol = cursor.getColumnIndexOrThrow(Media.MIME_TYPE)
             val widthCol = cursor.getColumnIndex(Media.WIDTH)
             val heightCol = cursor.getColumnIndex(Media.HEIGHT)
-            val latCol = cursor.getColumnIndex(Media.LATITUDE)
-            val lonCol = cursor.getColumnIndex(Media.LONGITUDE)
 
             while (cursor.moveToNext()) {
                 val dateTaken = cursor.getLong(dateCol)
@@ -114,8 +112,6 @@ class PhotoRepository private constructor(private val context: Context) {
                         mimeType = cursor.getString(mimeCol) ?: "image/*",
                         width = if (widthCol >= 0) cursor.getInt(widthCol) else 0,
                         height = if (heightCol >= 0) cursor.getInt(heightCol) else 0,
-                        latitude = if (latCol >= 0 && !cursor.isNull(latCol)) cursor.getDouble(latCol) else null,
-                        longitude = if (lonCol >= 0 && !cursor.isNull(lonCol)) cursor.getDouble(lonCol) else null,
                     )
                 )
             }
@@ -206,12 +202,15 @@ class PhotoRepository private constructor(private val context: Context) {
                 val trashRequest = MediaStore.createTrashRequest(resolver, uris, true)
                 trashRequest.send()
                 true
-            } else {
-                for (uri in uris) {
-                    resolver.delete(uri, null, null)
+        } else {
+            for (uri in uris) {
+                if (resolver.delete(uri, null, null) == 0) {
+                    Log.w("PhotoRepository", "resolver.delete returned 0 for $uri")
+                    return false
                 }
-                true
             }
+            true
+        }
         } catch (e: Exception) {
             Log.e("PhotoRepository", "Failed to trash files", e)
             false

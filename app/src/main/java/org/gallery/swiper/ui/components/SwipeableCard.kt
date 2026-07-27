@@ -1,9 +1,9 @@
 package org.gallery.swiper.ui.components
 
-import android.net.Uri
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.core.net.toUri
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -21,7 +21,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,8 +52,10 @@ import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.launch
+import org.gallery.swiper.R
 import org.gallery.swiper.ui.theme.DeleteRed
 import org.gallery.swiper.ui.theme.KeepGreen
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import kotlin.math.abs
@@ -65,10 +66,10 @@ private const val SWIPE_THRESHOLD = 300f
 @Composable
 fun SwipeableCard(
     imageUri: String,
+    modifier: Modifier = Modifier,
     isVideo: Boolean = false,
     onSwipeLeft: () -> Unit,
     onSwipeRight: () -> Unit,
-    modifier: Modifier = Modifier,
     onUndo: () -> Unit = {},
     snackbarHostState: SnackbarHostState? = null,
 ) {
@@ -81,10 +82,12 @@ fun SwipeableCard(
 
     var isVideoPlaying by remember(imageUri) { mutableStateOf(false) }
 
+    val undoConfirmation = stringResource(R.string.undo_confirmation)
+
     val player = remember(imageUri) {
         if (isVideo) {
             ExoPlayer.Builder(context).build().apply {
-                setMediaItem(MediaItem.fromUri(Uri.parse(imageUri)))
+                setMediaItem(MediaItem.fromUri(imageUri.toUri()))
                 repeatMode = Player.REPEAT_MODE_ONE
                 playWhenReady = false
                 volume = 0f
@@ -147,7 +150,7 @@ fun SwipeableCard(
                     if (!isVideo) {
                         onUndo()
                         scope.launch {
-                            snackbarHostState?.showSnackbar("Last decision undone")
+                            snackbarHostState?.showSnackbar(undoConfirmation)
                         }
                     }
                 }
@@ -207,7 +210,7 @@ fun SwipeableCard(
                     ) {
                         Icon(
                             if (isVideoPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (isVideoPlaying) "Pause" else "Play",
+                            contentDescription = if (isVideoPlaying) stringResource(R.string.pause) else stringResource(R.string.play),
                             tint = Color.White,
                             modifier = Modifier.size(40.dp),
                         )
@@ -217,7 +220,7 @@ fun SwipeableCard(
                 if (dismissProgress > 0.1f) {
                     val isKeep = animOffset.value > 0
                     val overlayColor = if (isKeep) KeepGreen else DeleteRed
-                    val label = if (isKeep) "KEEP" else "DELETE"
+                    val label = if (isKeep) stringResource(R.string.keep_label) else stringResource(R.string.delete_label)
 
                     Box(
                         modifier = Modifier

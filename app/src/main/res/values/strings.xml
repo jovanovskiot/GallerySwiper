@@ -41,4 +41,23 @@
     <string name="tap_desc">Undo last decision</string>
     <string name="bookmark_desc">Save your favorites</string>
     <string name="lets_go">Let\'s go!</string>
+    <string name="review_decisions_desc">Review your decisions.</string>
+    <string name="permanent_delete_warning">Photos will be permanently deleted on this device</string>
+    <string name="delete_photos_btn">Delete %1$d Photos</string>
+    <string name="undo_confirmation">Last decision undone</string>
+    <string name="remove_bookmark">Remove bookmark</string>
+    <string name="keep_label">KEEP</string>
+    <string name="delete_label">DELETE</string>
+    <string name="stats_reviewed">Reviewed</string>
+    <string name="stats_deleted">Deleted</string>
+    <string name="stats_space_saved">Space Saved</string>
+    <string name="stats_streak">Streak</string>
+    <string name="stats_months_done">Months Done</string>
+    <string name="stats_kept">Kept</string>
+    <string name="error_loading_photos">Error loading photos</string>
+    <string name="retry">Retry</string>
+    <string name="photos_count">%1$d photos</string>
+    <string name="month_kept_count">Kept: %1$d</string>
+    <string name="month_deleted_count">Delete: %1$d</string>
+    <string name="stats_streak_days">%1$d days</string>
 </resources>

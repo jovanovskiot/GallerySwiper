@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,6 +46,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.imageLoader
 import coil.request.ImageRequest
 import org.gallery.swiper.data.model.Decision
+import org.gallery.swiper.R
 import org.gallery.swiper.ui.components.SwipeableCard
 import org.gallery.swiper.ui.theme.BookmarkBlue
 import org.gallery.swiper.ui.theme.DeleteRed
@@ -77,13 +79,16 @@ fun SwipeScreen(
         viewModel.loadMonth(monthKey)
     }
 
-    LaunchedEffect(state.photos, state.currentIndex) {
-        val nextIndex = state.currentIndex + 1
-        if (nextIndex < state.photos.size) {
-            val nextPhoto = state.photos[nextIndex]
+    LaunchedEffect(state.currentIndex) {
+        if (state.isLoading || state.photos.isEmpty()) return@LaunchedEffect
+        val total = state.photos.size
+        val next = state.currentIndex + 1
+        if (next >= total) return@LaunchedEffect
+        val end = (next + 1).coerceAtMost(total - 1)
+        for (i in next..end) {
             context.imageLoader.enqueue(
                 ImageRequest.Builder(context)
-                    .data(nextPhoto.uri)
+                    .data(state.photos[i].uri)
                     .crossfade(true)
                     .build()
             )
@@ -111,7 +116,7 @@ fun SwipeScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = { onBack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
             )
@@ -129,7 +134,7 @@ fun SwipeScreen(
                         shape = RoundedCornerShape(50),
                         modifier = Modifier.size(64.dp),
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Delete", modifier = Modifier.size(32.dp))
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.delete), modifier = Modifier.size(32.dp))
                     }
 
                     IconButton(
@@ -138,7 +143,7 @@ fun SwipeScreen(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.Undo,
-                            contentDescription = "Undo",
+                            contentDescription = stringResource(R.string.undo),
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -148,7 +153,7 @@ fun SwipeScreen(
                                 state.decisions[state.photos[state.currentIndex].id] == Decision.BOOKMARK
                         Icon(
                             if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                            contentDescription = "Bookmark",
+                            contentDescription = stringResource(R.string.bookmark),
                             tint = if (isBookmarked) BookmarkBlue else MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -159,7 +164,7 @@ fun SwipeScreen(
                         shape = RoundedCornerShape(50),
                         modifier = Modifier.size(64.dp),
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Keep", modifier = Modifier.size(32.dp))
+                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.keep), modifier = Modifier.size(32.dp))
                     }
                 }
             }
@@ -184,13 +189,13 @@ fun SwipeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            "No photos found in this month",
+                            stringResource(R.string.no_photos_month),
                             style = MaterialTheme.typography.bodyLarge,
                             textAlign = TextAlign.Center,
                         )
                         Spacer(Modifier.height(16.dp))
                         Button(onClick = { onBack() }) {
-                            Text("Go Back")
+                            Text(stringResource(R.string.go_back))
                         }
                     }
                 }
@@ -201,15 +206,15 @@ fun SwipeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            "Month complete!",
+                            stringResource(R.string.month_complete),
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                         )
                         Spacer(Modifier.height(8.dp))
-                        Text("Review your decisions.")
+                        Text(stringResource(R.string.review_decisions_desc))
                         Spacer(Modifier.height(24.dp))
                         Button(onClick = { onFinish(monthKey) }) {
-                            Text("Review & Confirm")
+                            Text(stringResource(R.string.review_confirm))
                         }
                     }
                 }

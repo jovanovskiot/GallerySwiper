@@ -46,10 +46,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import org.gallery.swiper.R
 import org.gallery.swiper.data.model.Photo
 import org.gallery.swiper.ui.theme.DeleteRed
 import org.gallery.swiper.ui.theme.GreenCard
@@ -90,10 +92,10 @@ fun ReviewScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Review Decisions") },
+                title = { Text(stringResource(R.string.review_decisions)) },
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
             )
@@ -106,11 +108,11 @@ fun ReviewScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Done!", style = MaterialTheme.typography.headlineLarge, color = KeepGreen)
+                        Text(stringResource(R.string.done), style = MaterialTheme.typography.headlineLarge, color = KeepGreen)
                         Spacer(Modifier.height(8.dp))
-                        Text("Deleted ${state.deletePhotos.size} photos")
+                        Text(stringResource(R.string.deleted_photos, state.deletePhotos.size))
                         Spacer(Modifier.height(24.dp))
-                        Button(onClick = onDone) { Text("Back to Home") }
+                        Button(onClick = onDone) { Text(stringResource(R.string.back_to_home)) }
                     }
                 }
             }
@@ -123,7 +125,7 @@ fun ReviewScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator()
                         Spacer(Modifier.height(16.dp))
-                        Text("Moving to trash...")
+                        Text(stringResource(R.string.moving_to_trash))
                     }
                 }
             }
@@ -133,7 +135,7 @@ fun ReviewScreen(
 
                     if (state.deletePhotos.isNotEmpty() && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                         Text(
-                            "Photos will be permanently deleted on this device",
+                            stringResource(R.string.permanent_delete_warning),
                             color = DeleteRed,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -141,7 +143,7 @@ fun ReviewScreen(
                     }
 
                     Text(
-                        "Photos to Delete (${state.deletePhotos.size})",
+                        stringResource(R.string.photos_to_delete, state.deletePhotos.size),
                         color = DeleteRed,
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -149,7 +151,7 @@ fun ReviewScreen(
 
                     if (state.deletePhotos.isEmpty()) {
                         Text(
-                            "No photos marked for deletion",
+                            stringResource(R.string.no_photos_marked_delete),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 16.dp),
                         )
@@ -170,7 +172,7 @@ fun ReviewScreen(
                     Spacer(Modifier.height(16.dp))
 
                     Text(
-                        "Photos to Keep (${state.keepPhotos.size})",
+                        stringResource(R.string.photos_to_keep, state.keepPhotos.size),
                         color = KeepGreen,
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -178,7 +180,7 @@ fun ReviewScreen(
 
                     if (state.keepPhotos.isEmpty()) {
                         Text(
-                            "No photos marked to keep",
+                            stringResource(R.string.no_photos_marked_keep),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 16.dp),
                         )
@@ -207,11 +209,11 @@ fun ReviewScreen(
                         if (state.deletePhotos.isEmpty()) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null)
                             Spacer(Modifier.size(8.dp))
-                            Text("Confirm (Nothing to Delete)")
+                            Text(stringResource(R.string.confirm_nothing_to_delete))
                         } else {
                             Icon(Icons.Default.Delete, contentDescription = null)
                             Spacer(Modifier.size(8.dp))
-                            Text("Delete ${state.deletePhotos.size} Photos")
+                            Text(stringResource(R.string.delete_photos_btn, state.deletePhotos.size))
                         }
                     }
                 }
@@ -247,7 +249,7 @@ private fun PhotoThumbnail(photo: Photo, isDelete: Boolean, onMove: () -> Unit) 
             ) {
                 Icon(
                     if (isDelete) Icons.AutoMirrored.Filled.Undo else Icons.Default.Delete,
-                    contentDescription = if (isDelete) "Keep" else "Delete",
+                    contentDescription = if (isDelete) stringResource(R.string.keep) else stringResource(R.string.delete),
                     tint = if (isDelete) KeepGreen else DeleteRed,
                     modifier = Modifier.size(18.dp),
                 )

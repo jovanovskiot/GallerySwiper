@@ -39,41 +39,52 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
     private val _navigateToReview = MutableStateFlow<String?>(null)
     val navigateToReview: StateFlow<String?> = _navigateToReview.asStateFlow()
 
+    private data class SwipeLoadResult(
+        val sortedPhotos: List<Photo>,
+        val pendingMap: Map<Long, Decision>,
+        val startIndex: Int,
+        val monthLabel: String,
+    )
+
     fun loadMonth(monthKey: String) {
         viewModelScope.launch {
-            val months = withContext(Dispatchers.IO) { repository.getPhotosByMonth() }
-            val month = months.find { it.key == monthKey } ?: return@launch
+            val result = withContext(Dispatchers.IO) {
+                val months = repository.getPhotosByMonth()
+                val month = months.find { it.key == monthKey } ?: return@withContext null
 
-            val pendingDecisions = withContext(Dispatchers.IO) {
-                swipeDecisionDao.getPendingDecisions(monthKey)
-            }
-            val committedDecisions = withContext(Dispatchers.IO) {
-                swipeDecisionDao.getCommittedDecisions(monthKey)
-            }
+                val pendingDecisions = swipeDecisionDao.getPendingDecisions(monthKey)
+                val committedDecisions = swipeDecisionDao.getCommittedDecisions(monthKey)
 
-            val (sortedPhotos, pendingMap, startIndex) = withContext(Dispatchers.Default) {
-                val sorted = month.photos.sortedByDescending { it.dateTaken }
-                val map = pendingDecisions.associate { entity ->
+                val sortedPhotos = month.photos.sortedByDescending { it.dateTaken }
+                val pendingMap = pendingDecisions.associate { entity ->
                     entity.photoId to try { Decision.valueOf(entity.decision) } catch (_: Exception) { Decision.KEEP }
                 }
-                val index = if (committedDecisions.size >= sorted.size) {
-                    sorted.size
+                val startIndex = if (committedDecisions.size >= sortedPhotos.size) {
+                    sortedPhotos.size
                 } else {
                     val skipIds = pendingDecisions.map { it.photoId }.toSet() +
                             committedDecisions.map { it.photoId }.toSet()
-                    sorted.indexOfFirst { it.id !in skipIds }
-                        .let { if (it == -1) sorted.size else it }
+                    sortedPhotos.indexOfFirst { it.id !in skipIds }
+                        .let { if (it == -1) sortedPhotos.size else it }
                 }
-                Triple(sorted, map, index)
+
+                SwipeLoadResult(
+                    sortedPhotos = sortedPhotos,
+                    pendingMap = pendingMap,
+                    startIndex = startIndex,
+                    monthLabel = DateUtils.formatMonthYear(month.year, month.month),
+                )
             }
 
+            if (result == null) return@launch
+
             _uiState.value = SwipeUiState(
-                photos = sortedPhotos,
-                currentIndex = startIndex,
+                photos = result.sortedPhotos,
+                currentIndex = result.startIndex,
                 monthKey = monthKey,
-                monthLabel = DateUtils.formatMonthYear(month.year, month.month),
-                decisions = pendingMap,
-                isFinished = startIndex >= sortedPhotos.size,
+                monthLabel = result.monthLabel,
+                decisions = result.pendingMap,
+                isFinished = result.startIndex >= result.sortedPhotos.size,
                 isLoading = false,
             )
         }

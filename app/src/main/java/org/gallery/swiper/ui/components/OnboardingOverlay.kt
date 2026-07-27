@@ -26,7 +26,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import org.gallery.swiper.R
 import org.gallery.swiper.ui.theme.BookmarkBlue
 import org.gallery.swiper.ui.theme.DeleteRed
 import org.gallery.swiper.ui.theme.KeepGreen
@@ -49,12 +51,12 @@ fun OnboardingOverlay(onDismiss: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    "Welcome!",
+                    stringResource(R.string.welcome_title),
                     style = MaterialTheme.typography.headlineMedium,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Swipe through your photos to clean up",
+                    stringResource(R.string.how_it_works_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -64,8 +66,8 @@ fun OnboardingOverlay(onDismiss: () -> Unit) {
                     Text("\u2190", fontSize = 28.sp, color = DeleteRed)
                     Spacer(Modifier.width(16.dp))
                     Column {
-                        Text("Swipe Left", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
-                        Text("Mark for deletion", color = DeleteRed, fontSize = 14.sp)
+                        Text(stringResource(R.string.swipe_left), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.swipe_left_desc), color = DeleteRed, fontSize = 14.sp)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
@@ -74,8 +76,8 @@ fun OnboardingOverlay(onDismiss: () -> Unit) {
                     Text("\u2192", fontSize = 28.sp, color = KeepGreen)
                     Spacer(Modifier.width(16.dp))
                     Column {
-                        Text("Swipe Right", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
-                        Text("Mark to keep", color = KeepGreen, fontSize = 14.sp)
+                        Text(stringResource(R.string.swipe_right), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.swipe_right_desc), color = KeepGreen, fontSize = 14.sp)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
@@ -89,8 +91,8 @@ fun OnboardingOverlay(onDismiss: () -> Unit) {
                     )
                     Spacer(Modifier.width(16.dp))
                     Column {
-                        Text("Tap", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
-                        Text("Undo last decision", color = BookmarkBlue, fontSize = 14.sp)
+                        Text(stringResource(R.string.tap), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.tap_desc), color = BookmarkBlue, fontSize = 14.sp)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
@@ -104,8 +106,8 @@ fun OnboardingOverlay(onDismiss: () -> Unit) {
                     )
                     Spacer(Modifier.width(16.dp))
                     Column {
-                        Text("Bookmark", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
-                        Text("Save your favorites", color = BookmarkBlue, fontSize = 14.sp)
+                        Text(stringResource(R.string.bookmark), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.bookmark_desc), color = BookmarkBlue, fontSize = 14.sp)
                     }
                 }
 
@@ -115,7 +117,7 @@ fun OnboardingOverlay(onDismiss: () -> Unit) {
                     onClick = onDismiss,
                     shape = RoundedCornerShape(12.dp),
                 ) {
-                    Text("Let's go!")
+                    Text(stringResource(R.string.lets_go))
                 }
             }
         }

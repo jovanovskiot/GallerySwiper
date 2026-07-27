@@ -39,7 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.launch
+import org.gallery.swiper.R
 import org.gallery.swiper.ui.theme.BookmarkBlue
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,14 +53,15 @@ fun BookmarksScreen(
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val bookmarkRemovedText = stringResource(R.string.bookmark_removed)
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Bookmarks") },
+                title = { Text(stringResource(R.string.bookmarks)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
             )
@@ -79,7 +82,7 @@ fun BookmarksScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        "No bookmarked photos yet.\nBookmark photos while swiping to save them here.",
+                                    stringResource(R.string.no_bookmarked_photos),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -117,14 +120,14 @@ fun BookmarksScreen(
                                     onClick = {
                                         scope.launch {
                                             viewModel.removeBookmark(photo).join()
-                                            snackbarHostState.showSnackbar("Bookmark removed")
+                                            snackbarHostState.showSnackbar(bookmarkRemovedText)
                                         }
                                     },
                                     modifier = Modifier.align(Alignment.TopEnd),
                                 ) {
                                     Icon(
                                         Icons.Default.BookmarkRemove,
-                                        contentDescription = "Remove bookmark",
+                                        contentDescription = stringResource(R.string.remove_bookmark),
                                         tint = BookmarkBlue,
                                     )
                                 }

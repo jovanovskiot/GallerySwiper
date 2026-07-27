@@ -85,7 +85,11 @@ fun HomeScreen(
                 Manifest.permission.READ_MEDIA_VIDEO,
             )
         } else {
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+            val perms = mutableListOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                perms.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+            perms.toTypedArray()
         }
     }
 
@@ -178,7 +182,7 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            "Error loading photos",
+                            stringResource(R.string.error_loading_photos),
                             style = MaterialTheme.typography.headlineSmall,
                             textAlign = TextAlign.Center,
                         )
@@ -189,7 +193,7 @@ fun HomeScreen(
                         )
                         Spacer(Modifier.height(24.dp))
                         Button(onClick = { viewModel.loadData() }) {
-                            Text("Retry")
+                            Text(stringResource(R.string.retry))
                         }
                     }
                 }
@@ -267,18 +271,18 @@ private fun MonthCard(month: PhotoMonth, onClick: () -> Unit) {
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = "${month.totalCount} photos",
+                    text = stringResource(R.string.photos_count, month.totalCount),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (month.reviewedCount > 0) {
                     Row {
                         if (month.keptCount > 0) {
-                            Text("Kept: ${month.keptCount}", color = KeepGreen, fontSize = 12.sp)
+                            Text(stringResource(R.string.month_kept_count, month.keptCount), color = KeepGreen, fontSize = 12.sp)
                             Text("  ", fontSize = 12.sp)
                         }
                         if (month.deletedCount > 0) {
-                            Text("Delete: ${month.deletedCount}", color = DeleteRed, fontSize = 12.sp)
+                            Text(stringResource(R.string.month_deleted_count, month.deletedCount), color = DeleteRed, fontSize = 12.sp)
                         }
                     }
                 }

@@ -1,7 +1,9 @@
 package org.gallery.swiper.data.model
 
 import android.net.Uri
+import androidx.compose.runtime.Immutable
 
+@Immutable
 data class Photo(
     val id: Long,
     val uri: Uri,

@@ -1,5 +1,8 @@
 package org.gallery.swiper.data.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class PhotoMonth(
     val year: Int,
     val month: Int,
