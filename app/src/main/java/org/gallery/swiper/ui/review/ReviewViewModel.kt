@@ -34,7 +34,7 @@ data class ReviewUiState(
 
 class ReviewViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = PhotoRepository(application)
+    private val repository = PhotoRepository.getInstance(application)
     private val db = AppDatabase.getInstance(application)
     private val swipeDecisionDao = db.swipeDecisionDao()
     private val statsDao = db.statsDao()

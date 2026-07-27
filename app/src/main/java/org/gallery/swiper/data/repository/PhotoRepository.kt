@@ -14,7 +14,18 @@ import java.time.Instant
 import java.time.YearMonth
 import java.time.ZoneId
 
-class PhotoRepository(private val context: Context) {
+class PhotoRepository private constructor(private val context: Context) {
+
+    companion object {
+        @Volatile
+        private var INSTANCE: PhotoRepository? = null
+
+        fun getInstance(context: Context): PhotoRepository {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: PhotoRepository(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+    }
 
     @Volatile
     private var cachedMonths: List<PhotoMonth>? = null

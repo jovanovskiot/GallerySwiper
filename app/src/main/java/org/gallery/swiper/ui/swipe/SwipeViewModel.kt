@@ -21,6 +21,7 @@ data class SwipeUiState(
     val photos: List<Photo> = emptyList(),
     val currentIndex: Int = 0,
     val isFinished: Boolean = false,
+    val isLoading: Boolean = true,
     val monthKey: String = "",
     val monthLabel: String = "",
     val decisions: Map<Long, Decision> = emptyMap(),
@@ -28,7 +29,7 @@ data class SwipeUiState(
 
 class SwipeViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = PhotoRepository(application)
+    private val repository = PhotoRepository.getInstance(application)
     private val db = AppDatabase.getInstance(application)
     private val swipeDecisionDao = db.swipeDecisionDao()
 
@@ -43,24 +44,27 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
             val months = withContext(Dispatchers.IO) { repository.getPhotosByMonth() }
             val month = months.find { it.key == monthKey } ?: return@launch
 
-            val sortedPhotos = month.photos.sortedByDescending { it.dateTaken }
             val pendingDecisions = withContext(Dispatchers.IO) {
                 swipeDecisionDao.getPendingDecisions(monthKey)
             }
             val committedDecisions = withContext(Dispatchers.IO) {
                 swipeDecisionDao.getCommittedDecisions(monthKey)
             }
-            val pendingMap = pendingDecisions.associate { entity ->
-                entity.photoId to try { Decision.valueOf(entity.decision) } catch (_: Exception) { Decision.KEEP }
-            }
 
-            val startIndex = if (committedDecisions.size >= sortedPhotos.size) {
-                sortedPhotos.size
-            } else {
-                val skipIds = pendingDecisions.map { it.photoId }.toSet() +
-                        committedDecisions.map { it.photoId }.toSet()
-                sortedPhotos.indexOfFirst { it.id !in skipIds }
-                    .let { if (it == -1) sortedPhotos.size else it }
+            val (sortedPhotos, pendingMap, startIndex) = withContext(Dispatchers.Default) {
+                val sorted = month.photos.sortedByDescending { it.dateTaken }
+                val map = pendingDecisions.associate { entity ->
+                    entity.photoId to try { Decision.valueOf(entity.decision) } catch (_: Exception) { Decision.KEEP }
+                }
+                val index = if (committedDecisions.size >= sorted.size) {
+                    sorted.size
+                } else {
+                    val skipIds = pendingDecisions.map { it.photoId }.toSet() +
+                            committedDecisions.map { it.photoId }.toSet()
+                    sorted.indexOfFirst { it.id !in skipIds }
+                        .let { if (it == -1) sorted.size else it }
+                }
+                Triple(sorted, map, index)
             }
 
             _uiState.value = SwipeUiState(
@@ -70,6 +74,7 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
                 monthLabel = DateUtils.formatMonthYear(month.year, month.month),
                 decisions = pendingMap,
                 isFinished = startIndex >= sortedPhotos.size,
+                isLoading = false,
             )
         }
     }
