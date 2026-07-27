@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,8 +49,8 @@ class BookmarksViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun removeBookmark(photo: Photo) {
-        viewModelScope.launch {
+    fun removeBookmark(photo: Photo): Job {
+        return viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 bookmarkDao.deleteByPhotoId(photo.id)
             }

@@ -115,8 +115,8 @@ fun BookmarksScreen(
                                 )
                                 IconButton(
                                     onClick = {
-                                        viewModel.removeBookmark(photo)
                                         scope.launch {
+                                            viewModel.removeBookmark(photo).join()
                                             snackbarHostState.showSnackbar("Bookmark removed")
                                         }
                                     },

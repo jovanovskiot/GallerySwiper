@@ -15,7 +15,7 @@ import org.gallery.swiper.data.entity.SwipeDecisionEntity
 
 @Database(
     entities = [BookmarkEntity::class, StatsEntity::class, SwipeDecisionEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -30,14 +30,14 @@ abstract class AppDatabase : RoomDatabase() {
 
         private fun deduplicateAndCreateIndex(db: SupportSQLiteDatabase) {
             db.execSQL("""
-                DELETE FROM swipe_decisions WHERE id NOT IN (
+                DELETE FROM swipe_decisions WHERE isCommitted = 0 AND id NOT IN (
                     SELECT MAX(id) FROM swipe_decisions
                     WHERE isCommitted = 0
                     GROUP BY photoId, monthKey
                 )
             """)
             db.execSQL("""
-                DELETE FROM swipe_decisions WHERE id NOT IN (
+                DELETE FROM swipe_decisions WHERE isCommitted = 1 AND id NOT IN (
                     SELECT MAX(id) FROM swipe_decisions
                     WHERE isCommitted = 1
                     GROUP BY photoId, monthKey
@@ -56,13 +56,21 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATE_5_TO_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE swipe_decisions ADD COLUMN dateTaken INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE swipe_decisions ADD COLUMN width INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE swipe_decisions ADD COLUMN height INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "gallery_swiper.db"
-                ).addMigrations(MIGRATE_2_TO_4, MIGRATE_4_TO_5)
+                ).addMigrations(MIGRATE_2_TO_4, MIGRATE_4_TO_5, MIGRATE_5_TO_6)
                     .build()
                     .also { INSTANCE = it }
             }

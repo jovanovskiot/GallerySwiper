@@ -97,6 +97,9 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                             monthKey = monthKey, photoId = photo.id,
                             uri = photo.uri.toString(), decision = decision.name,
                             size = photo.size, mimeType = photo.mimeType,
+                            dateTaken = photo.dateTaken,
+                            width = photo.width,
+                            height = photo.height,
                             isCommitted = false,
                         )
                     )
@@ -154,6 +157,9 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                             monthKey = monthKey, photoId = photo.id,
                             uri = photo.uri.toString(), decision = Decision.DELETE.name,
                             size = photo.size, mimeType = photo.mimeType,
+                            dateTaken = photo.dateTaken,
+                            width = photo.width,
+                            height = photo.height,
                             isCommitted = true,
                         )
                     )
@@ -165,6 +171,9 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                             monthKey = monthKey, photoId = photo.id,
                             uri = photo.uri.toString(), decision = d.name,
                             size = photo.size, mimeType = photo.mimeType,
+                            dateTaken = photo.dateTaken,
+                            width = photo.width,
+                            height = photo.height,
                             isCommitted = true,
                         )
                     )
@@ -218,9 +227,11 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
         return Photo(
             id = entity.photoId,
             uri = Uri.parse(entity.uri),
-            dateTaken = 0, size = entity.size,
+            dateTaken = entity.dateTaken,
+            size = entity.size,
             mimeType = entity.mimeType,
-            width = 0, height = 0,
+            width = entity.width,
+            height = entity.height,
         )
     }
 }

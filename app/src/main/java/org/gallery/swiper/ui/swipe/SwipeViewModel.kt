@@ -118,6 +118,9 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
                             decision = decision.name,
                             size = photo.size,
                             mimeType = photo.mimeType,
+                            dateTaken = photo.dateTaken,
+                            width = photo.width,
+                            height = photo.height,
                             isCommitted = false,
                         )
                     )

@@ -16,5 +16,8 @@ data class SwipeDecisionEntity(
     val decision: String,
     val size: Long = 0,
     val mimeType: String = "image/*",
+    val dateTaken: Long = 0,
+    val width: Int = 0,
+    val height: Int = 0,
     val isCommitted: Boolean = false,
 )
