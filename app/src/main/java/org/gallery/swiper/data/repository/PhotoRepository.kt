@@ -16,9 +16,17 @@ import java.time.ZoneId
 
 class PhotoRepository(private val context: Context) {
 
+    private var cachedMonths: List<PhotoMonth>? = null
+
     fun getPhotosByMonth(): List<PhotoMonth> {
-        val photos = loadAllPhotos()
-        return groupByMonth(photos)
+        if (cachedMonths == null) {
+            cachedMonths = groupByMonth(loadAllPhotos())
+        }
+        return cachedMonths ?: emptyList()
+    }
+
+    fun invalidateCache() {
+        cachedMonths = null
     }
 
     fun loadAllPhotos(): List<Photo> {

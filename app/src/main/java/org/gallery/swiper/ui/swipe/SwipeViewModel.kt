@@ -117,6 +117,7 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
                             uri = photo.uri.toString(),
                             decision = decision.name,
                             size = photo.size,
+                            mimeType = photo.mimeType,
                             isCommitted = false,
                         )
                     )

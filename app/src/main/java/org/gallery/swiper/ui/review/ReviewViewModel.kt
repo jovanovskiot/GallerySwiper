@@ -94,11 +94,9 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                     swipeDecisionDao.removeDecision(photo.id, monthKey)
                     swipeDecisionDao.upsert(
                         SwipeDecisionEntity(
-                            monthKey = monthKey,
-                            photoId = photo.id,
-                            uri = photo.uri.toString(),
-                            decision = decision.name,
-                            size = photo.size,
+                            monthKey = monthKey, photoId = photo.id,
+                            uri = photo.uri.toString(), decision = decision.name,
+                            size = photo.size, mimeType = photo.mimeType,
                             isCommitted = false,
                         )
                     )
@@ -135,13 +133,28 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
             val keptCount = state.keepPhotos.size
 
             withContext(Dispatchers.IO) {
+                val deleteUris = state.deletePhotos.map { it.uri }
+
+                // Only trash files when NOT coming from the IntentSender path
+                var trashFailed = false
+                if (!fromIntentSender && deleteUris.isNotEmpty()) {
+                    trashFailed = !repository.sendToTrash(deleteUris)
+                    if (trashFailed) {
+                        Log.e("ReviewViewModel", "Failed to trash photos")
+                    }
+                }
+
+                // Invalidate cache so gallery reloads fresh
+                repository.invalidateCache()
+
                 val finalDecisions = mutableListOf<SwipeDecisionEntity>()
                 state.deletePhotos.forEach { photo ->
                     finalDecisions.add(
                         SwipeDecisionEntity(
                             monthKey = monthKey, photoId = photo.id,
                             uri = photo.uri.toString(), decision = Decision.DELETE.name,
-                            size = photo.size, isCommitted = true,
+                            size = photo.size, mimeType = photo.mimeType,
+                            isCommitted = true,
                         )
                     )
                 }
@@ -151,23 +164,14 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                         SwipeDecisionEntity(
                             monthKey = monthKey, photoId = photo.id,
                             uri = photo.uri.toString(), decision = d.name,
-                            size = photo.size, isCommitted = true,
+                            size = photo.size, mimeType = photo.mimeType,
+                            isCommitted = true,
                         )
                     )
                 }
 
                 swipeDecisionDao.replaceMonth(monthKey, finalDecisions)
 
-                // Only trash files when NOT coming from the IntentSender path
-                // (IntentSender already handled trashing via system dialog)
-                if (!fromIntentSender) {
-                    val deleteUris = state.deletePhotos.map { it.uri }
-                    if (deleteUris.isNotEmpty()) {
-                        repository.sendToTrash(deleteUris)
-                    }
-                }
-
-                // Initialize stats row only if it doesn't exist yet (IGNORE)
                 statsDao.initIfEmpty(StatsEntity())
                 statsDao.addReviewed(deletedCount + keptCount)
                 statsDao.addDeleted(deletedCount, deletedSpace)
@@ -181,11 +185,9 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                     val todayDate = LocalDate.now(ZoneId.systemDefault())
                     val lastDateLocal = Instant.ofEpochMilli(lastDate)
                         .atZone(ZoneId.systemDefault()).toLocalDate()
-                    if (todayDate.dayOfYear == lastDateLocal.dayOfYear && todayDate.year == lastDateLocal.year) {
-                        // Same day, no streak change
-                    } else if (todayDate.minusDays(1) == lastDateLocal) {
+                    if (todayDate.minusDays(1) == lastDateLocal) {
                         statsDao.incrementStreak(today)
-                    } else {
+                    } else if (todayDate != lastDateLocal) {
                         statsDao.resetStreak(today)
                     }
                 }
@@ -217,7 +219,8 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
             id = entity.photoId,
             uri = Uri.parse(entity.uri),
             dateTaken = 0, size = entity.size,
-            mimeType = "image/*", width = 0, height = 0,
+            mimeType = entity.mimeType,
+            width = 0, height = 0,
         )
     }
 }

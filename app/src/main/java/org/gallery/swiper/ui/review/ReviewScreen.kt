@@ -1,6 +1,7 @@
 package org.gallery.swiper.ui.review
 
 import android.app.Activity
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -129,6 +130,15 @@ fun ReviewScreen(
 
             else -> {
                 Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+
+                    if (state.deletePhotos.isNotEmpty() && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                        Text(
+                            "Photos will be permanently deleted on this device",
+                            color = DeleteRed,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        )
+                    }
 
                     Text(
                         "Photos to Delete (${state.deletePhotos.size})",

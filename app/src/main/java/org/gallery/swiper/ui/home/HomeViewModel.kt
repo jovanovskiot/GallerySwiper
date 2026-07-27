@@ -51,6 +51,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
+                repository.invalidateCache()
                 val months = withContext(Dispatchers.IO) { repository.getPhotosByMonth() }
 
                 val pendingRows = withContext(Dispatchers.IO) {
