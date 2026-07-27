@@ -16,6 +16,7 @@ import java.time.ZoneId
 
 class PhotoRepository(private val context: Context) {
 
+    @Volatile
     private var cachedMonths: List<PhotoMonth>? = null
 
     fun getPhotosByMonth(): List<PhotoMonth> {

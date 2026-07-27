@@ -1,6 +1,7 @@
 package org.gallery.swiper.ui.swipe
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -108,25 +109,29 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = state.copy(decisions = updatedDecisions)
 
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                if (decision != null) {
-                    swipeDecisionDao.upsert(
-                        SwipeDecisionEntity(
-                            monthKey = state.monthKey,
-                            photoId = photo.id,
-                            uri = photo.uri.toString(),
-                            decision = decision.name,
-                            size = photo.size,
-                            mimeType = photo.mimeType,
-                            dateTaken = photo.dateTaken,
-                            width = photo.width,
-                            height = photo.height,
-                            isCommitted = false,
+            try {
+                withContext(Dispatchers.IO) {
+                    if (decision != null) {
+                        swipeDecisionDao.upsert(
+                            SwipeDecisionEntity(
+                                monthKey = state.monthKey,
+                                photoId = photo.id,
+                                uri = photo.uri.toString(),
+                                decision = decision.name,
+                                size = photo.size,
+                                mimeType = photo.mimeType,
+                                dateTaken = photo.dateTaken,
+                                width = photo.width,
+                                height = photo.height,
+                                isCommitted = false,
+                            )
                         )
-                    )
-                } else {
-                    swipeDecisionDao.removeDecision(photo.id, state.monthKey)
+                    } else {
+                        swipeDecisionDao.removeDecision(photo.id, state.monthKey)
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e("SwipeViewModel", "Failed to record decision", e)
             }
         }
     }

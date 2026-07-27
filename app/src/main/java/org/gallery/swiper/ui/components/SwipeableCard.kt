@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,7 +55,10 @@ import coil.request.ImageRequest
 import kotlinx.coroutines.launch
 import org.gallery.swiper.ui.theme.DeleteRed
 import org.gallery.swiper.ui.theme.KeepGreen
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import kotlin.math.abs
+
 
 private const val SWIPE_THRESHOLD = 300f
 
@@ -81,7 +85,6 @@ fun SwipeableCard(
         if (isVideo) {
             ExoPlayer.Builder(context).build().apply {
                 setMediaItem(MediaItem.fromUri(Uri.parse(imageUri)))
-                prepare()
                 repeatMode = Player.REPEAT_MODE_ONE
                 playWhenReady = false
                 volume = 0f
@@ -89,8 +92,20 @@ fun SwipeableCard(
         } else null
     }
 
-    DisposableEffect(imageUri) {
-        onDispose { player?.release() }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(imageUri, lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) {
+                player?.playWhenReady = false
+                isVideoPlaying = false
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            player?.release()
+        }
     }
 
     Box(
@@ -179,6 +194,9 @@ fun SwipeableCard(
                     IconButton(
                         onClick = {
                             isVideoPlaying = !isVideoPlaying
+                            if (isVideoPlaying) {
+                                player?.takeIf { it.playbackState == Player.STATE_IDLE }?.prepare()
+                            }
                             player?.playWhenReady = isVideoPlaying
                         },
                         modifier = Modifier

@@ -60,8 +60,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.gallery.swiper.R
 import org.gallery.swiper.data.model.PhotoMonth
 import org.gallery.swiper.ui.theme.DeleteRed
+import org.gallery.swiper.ui.components.OnboardingOverlay
 import org.gallery.swiper.ui.theme.KeepGreen
 import org.gallery.swiper.util.DateUtils
+import org.gallery.swiper.util.Preferences
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,6 +76,7 @@ fun HomeScreen(
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var showSettingsButton by remember { mutableStateOf(false) }
+    var showOnboarding by remember { mutableStateOf(false) }
 
     val permissions = remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -104,6 +107,12 @@ fun HomeScreen(
             permissionLauncher.launch(permissions)
         } else {
             viewModel.setPermissionGranted()
+        }
+    }
+
+    LaunchedEffect(state.months) {
+        if (state.months.isNotEmpty() && !Preferences.hasSeenOnboarding(context)) {
+            showOnboarding = true
         }
     }
 
@@ -209,6 +218,15 @@ fun HomeScreen(
                         }
                     }
                 }
+            }
+
+            if (showOnboarding) {
+                OnboardingOverlay(
+                    onDismiss = {
+                        showOnboarding = false
+                        Preferences.markOnboardingSeen(context)
+                    }
+                )
             }
         }
     }

@@ -3,6 +3,7 @@ package org.gallery.swiper.ui.review
 import android.app.Application
 import android.content.IntentSender
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -118,9 +119,14 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
         }
 
         val uris = state.deletePhotos.map { it.uri }
-        val sender = repository.getDeletionPendingIntentSender(uris)
-        if (sender != null) {
-            _uiState.value = state.copy(intentSender = sender)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val sender = repository.getDeletionPendingIntentSender(uris)
+            if (sender != null) {
+                _uiState.value = state.copy(intentSender = sender)
+                return
+            }
+            Log.e("ReviewViewModel", "Cannot delete: trash dialog unavailable on API 30+")
             return
         }
 

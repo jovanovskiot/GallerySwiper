@@ -31,4 +31,14 @@
     <string name="bookmark_removed">Bookmark removed</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>
+    <string name="welcome_title">Welcome!</string>
+    <string name="how_it_works_subtitle">Swipe through your photos to clean up</string>
+    <string name="swipe_left">Swipe Left</string>
+    <string name="swipe_left_desc">Mark for deletion</string>
+    <string name="swipe_right">Swipe Right</string>
+    <string name="swipe_right_desc">Mark to keep</string>
+    <string name="tap">Tap</string>
+    <string name="tap_desc">Undo last decision</string>
+    <string name="bookmark_desc">Save your favorites</string>
+    <string name="lets_go">Let\'s go!</string>
 </resources>

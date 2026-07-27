@@ -35,7 +35,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        loadData()
         viewModelScope.launch {
             statsDao.getStats().collect { stats ->
                 _uiState.value = _uiState.value.copy(

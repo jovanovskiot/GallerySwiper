@@ -34,7 +34,7 @@ interface SwipeDecisionDao {
     @Query("SELECT COUNT(*) FROM swipe_decisions WHERE monthKey = :monthKey AND isCommitted = 1")
     suspend fun getCommittedCount(monthKey: String): Int
 
-    @Query("SELECT COUNT(DISTINCT monthKey) FROM swipe_decisions")
+    @Query("SELECT COUNT(DISTINCT monthKey) FROM swipe_decisions WHERE isCommitted = 1")
     suspend fun getCompletedMonthCount(): Int
 
     @Query("SELECT monthKey, decision FROM swipe_decisions WHERE isCommitted = 0")
