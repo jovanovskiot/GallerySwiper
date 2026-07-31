@@ -12,8 +12,7 @@ A free and open-source Android app for cleaning up your photo gallery by swiping
 - **Trash-safe** — uses Android's `createTrashRequest` (API 30+) to keep recoverable copies
 - **Bookmarks** — save photos to revisit later
 - **Statistics** — reviewed count, deleted count, space saved, streak tracking
-- **No ads, no limits** — 100% free, no subscriptions, no time-gates
-- **No AI, no network** — all processing happens on-device
+- **No ads, no limits, no internet connection needed** — 100% free
 
 ## Permissions
 
