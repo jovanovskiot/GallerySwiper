@@ -31,10 +31,10 @@ class StatsViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         viewModelScope.launch {
+            val completed = withContext(Dispatchers.IO) {
+                swipeDecisionDao.getCompletedMonthCount()
+            }
             statsDao.getStats().collect { stats ->
-                val completed = withContext(Dispatchers.IO) {
-                    swipeDecisionDao.getCompletedMonthCount()
-                }
                 _uiState.value = StatsUiState(
                     totalReviewed = stats?.totalReviewed ?: 0,
                     totalDeleted = stats?.totalDeleted ?: 0,

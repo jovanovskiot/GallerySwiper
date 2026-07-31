@@ -89,6 +89,7 @@ fun SwipeScreen(
             context.imageLoader.enqueue(
                 ImageRequest.Builder(context)
                     .data(state.photos[i].uri)
+                    .size(2400)
                     .crossfade(true)
                     .build()
             )

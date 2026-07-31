@@ -9,6 +9,7 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,16 +52,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.gallery.swiper.R
 import org.gallery.swiper.data.model.PhotoMonth
 import org.gallery.swiper.ui.theme.DeleteRed
+import org.gallery.swiper.ui.components.AboutDialog
 import org.gallery.swiper.ui.components.OnboardingOverlay
 import org.gallery.swiper.ui.theme.KeepGreen
 import org.gallery.swiper.util.DateUtils
@@ -77,6 +84,7 @@ fun HomeScreen(
     val context = LocalContext.current
     var showSettingsButton by remember { mutableStateOf(false) }
     var showOnboarding by remember { mutableStateOf(false) }
+    var showAbout by remember { mutableStateOf(false) }
 
     val permissions = remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -114,6 +122,19 @@ fun HomeScreen(
         }
     }
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refresh()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     LaunchedEffect(state.months) {
         if (state.months.isNotEmpty() && !Preferences.hasSeenOnboarding(context)) {
             showOnboarding = true
@@ -123,7 +144,20 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_logo),
+                            contentDescription = stringResource(R.string.about_title),
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { showAbout = true },
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(stringResource(R.string.app_name))
+                    }
+                },
                 actions = {
                     IconButton(onClick = onStatsClick) {
                         Icon(Icons.Default.BarChart, contentDescription = stringResource(R.string.stats))
@@ -231,6 +265,10 @@ fun HomeScreen(
                         Preferences.markOnboardingSeen(context)
                     }
                 )
+            }
+
+            if (showAbout) {
+                AboutDialog(onDismiss = { showAbout = false })
             }
         }
     }

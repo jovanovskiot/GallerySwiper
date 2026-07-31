@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.gallery.swiper.data.AppDatabase
 import org.gallery.swiper.data.entity.SwipeDecisionEntity
@@ -39,6 +41,8 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
     private val _navigateToReview = MutableStateFlow<String?>(null)
     val navigateToReview: StateFlow<String?> = _navigateToReview.asStateFlow()
 
+    private val decisionMutex = Mutex()
+
     private data class SwipeLoadResult(
         val sortedPhotos: List<Photo>,
         val pendingMap: Map<Long, Decision>,
@@ -55,7 +59,7 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
                 val pendingDecisions = swipeDecisionDao.getPendingDecisions(monthKey)
                 val committedDecisions = swipeDecisionDao.getCommittedDecisions(monthKey)
 
-                val sortedPhotos = month.photos.sortedByDescending { it.dateTaken }
+                val sortedPhotos = month.photos
                 val pendingMap = pendingDecisions.associate { entity ->
                     entity.photoId to try { Decision.valueOf(entity.decision) } catch (_: Exception) { Decision.KEEP }
                 }
@@ -125,29 +129,31 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = state.copy(decisions = updatedDecisions)
 
         viewModelScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    if (decision != null) {
-                        swipeDecisionDao.upsert(
-                            SwipeDecisionEntity(
-                                monthKey = state.monthKey,
-                                photoId = photo.id,
-                                uri = photo.uri.toString(),
-                                decision = decision.name,
-                                size = photo.size,
-                                mimeType = photo.mimeType,
-                                dateTaken = photo.dateTaken,
-                                width = photo.width,
-                                height = photo.height,
-                                isCommitted = false,
+            decisionMutex.withLock {
+                try {
+                    withContext(Dispatchers.IO) {
+                        if (decision != null) {
+                            swipeDecisionDao.upsert(
+                                SwipeDecisionEntity(
+                                    monthKey = state.monthKey,
+                                    photoId = photo.id,
+                                    uri = photo.uri.toString(),
+                                    decision = decision.name,
+                                    size = photo.size,
+                                    mimeType = photo.mimeType,
+                                    dateTaken = photo.dateTaken,
+                                    width = photo.width,
+                                    height = photo.height,
+                                    isCommitted = false,
+                                )
                             )
-                        )
-                    } else {
-                        swipeDecisionDao.removeDecision(photo.id, state.monthKey)
+                        } else {
+                            swipeDecisionDao.removeDecision(photo.id, state.monthKey)
+                        }
                     }
+                } catch (e: Exception) {
+                    Log.e("SwipeViewModel", "Failed to record decision", e)
                 }
-            } catch (e: Exception) {
-                Log.e("SwipeViewModel", "Failed to record decision", e)
             }
         }
     }
@@ -174,8 +180,14 @@ class SwipeViewModel(application: Application) : AndroidViewModel(application) {
             currentIndex = prevIndex, isFinished = false, decisions = updatedDecisions,
         )
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                swipeDecisionDao.removeDecision(photo.id, state.monthKey)
+            decisionMutex.withLock {
+                try {
+                    withContext(Dispatchers.IO) {
+                        swipeDecisionDao.removeDecision(photo.id, state.monthKey)
+                    }
+                } catch (e: Exception) {
+                    Log.e("SwipeViewModel", "Failed to undo decision", e)
+                }
             }
         }
     }

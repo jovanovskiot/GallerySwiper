@@ -52,6 +52,9 @@ interface SwipeDecisionDao {
     @Query("DELETE FROM swipe_decisions WHERE photoId = :photoId AND monthKey = :monthKey AND isCommitted = 0")
     suspend fun removeDecision(photoId: Long, monthKey: String)
 
+    @Query("UPDATE swipe_decisions SET decision = :decision WHERE photoId = :photoId AND isCommitted = 1")
+    suspend fun updateCommittedDecision(photoId: Long, decision: String)
+
     @Transaction
     suspend fun replaceMonth(monthKey: String, finalDecisions: List<SwipeDecisionEntity>) {
         deleteMonth(monthKey)

@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,16 +50,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loadData() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            if (_uiState.value.months.isEmpty()) {
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            }
             try {
-                val months = withContext(Dispatchers.IO) { repository.getPhotosByMonth() }
-
-                val pendingRows = withContext(Dispatchers.IO) {
-                    swipeDecisionDao.getAllPendingFlat()
+                val result = withContext(Dispatchers.IO) {
+                    coroutineScope {
+                        val monthsDeferred = async { repository.getPhotosByMonth() }
+                        val pendingDeferred = async { swipeDecisionDao.getAllPendingFlat() }
+                        val committedDeferred = async { swipeDecisionDao.getCommittedCountsPerMonth() }
+                        Triple(monthsDeferred.await(), pendingDeferred.await(), committedDeferred.await())
+                    }
                 }
-                val committedCounts = withContext(Dispatchers.IO) {
-                    swipeDecisionDao.getCommittedCountsPerMonth()
-                }
+                val months = result.first
+                val pendingRows = result.second
+                val committedCounts = result.third
                 val pendingByMonth = pendingRows.groupBy { it.monthKey }
                 val committedMap = committedCounts.associate { it.monthKey to it.cnt }
 
@@ -80,10 +87,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 )
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Failed to load photos", e)
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false, error = "Couldn't load photos: ${e.message ?: "Unknown error"}"
-                )
+                val current = _uiState.value
+                if (current.months.isEmpty()) {
+                    _uiState.value = current.copy(
+                        isLoading = false, error = "Couldn't load photos: ${e.message ?: "Unknown error"}"
+                    )
+                }
             }
+        }
+    }
+
+    fun refresh() {
+        if (_uiState.value.hasPermission) {
+            repository.invalidateCache()
+            loadData()
         }
     }
 

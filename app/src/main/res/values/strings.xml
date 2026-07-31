@@ -28,7 +28,10 @@
     <string name="confirm_nothing_to_delete">Confirm (Nothing to Delete)</string>
     <string name="go_back">Go Back</string>
     <string name="no_bookmarked_photos">No bookmarked photos yet.\nBookmark photos while swiping to save them here.</string>
-    <string name="bookmark_removed">Bookmark removed</string>
+    <string name="bookmark_decision_title">What would you like to do?</string>
+    <string name="bookmark_kept">Bookmark removed, photo kept</string>
+    <string name="bookmark_deleted">Photo moved to trash</string>
+    <string name="bookmark_delete_failed">Couldn\'t delete photo</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <string name="welcome_title">Welcome!</string>
@@ -45,7 +48,6 @@
     <string name="permanent_delete_warning">Photos will be permanently deleted on this device</string>
     <string name="delete_photos_btn">Delete %1$d Photos</string>
     <string name="undo_confirmation">Last decision undone</string>
-    <string name="remove_bookmark">Remove bookmark</string>
     <string name="keep_label">KEEP</string>
     <string name="delete_label">DELETE</string>
     <string name="stats_reviewed">Reviewed</string>
@@ -60,4 +62,12 @@
     <string name="month_kept_count">Kept: %1$d</string>
     <string name="month_deleted_count">Delete: %1$d</string>
     <string name="stats_streak_days">%1$d days</string>
+    <string name="about_title">About</string>
+    <string name="about_version">v1.0.0-beta</string>
+    <string name="about_description">A free, open-source Android app to clean up your photo gallery by swiping. No ads, no tracking, fully offline.</string>
+    <string name="about_author">Made by jovanovskiot — a medical physics student who refused to pay a subscription just to delete his own photos.</string>
+    <string name="about_link_profile">GitHub profile</string>
+    <string name="about_link_source">Source code</string>
+    <string name="about_link_releases">Releases</string>
+    <string name="close">Close</string>
 </resources>

@@ -8,6 +8,8 @@ import android.os.Build
 import android.provider.MediaStore
 import android.provider.MediaStore.Images.Media
 import android.provider.MediaStore.Video.Media as VideoMedia
+import android.provider.MediaStore.Images.Thumbnails as ImageThumbnails
+import android.provider.MediaStore.Video.Thumbnails as VideoThumbnails
 import android.util.Log
 import org.gallery.swiper.data.model.Photo
 import org.gallery.swiper.data.model.PhotoMonth
@@ -17,8 +19,8 @@ import java.time.ZoneId
 
 class PhotoRepository private constructor(private val context: Context) {
 
-    @SuppressLint("StaticFieldLeak")
     companion object {
+        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var INSTANCE: PhotoRepository? = null
 
@@ -33,10 +35,9 @@ class PhotoRepository private constructor(private val context: Context) {
     private var cachedMonths: List<PhotoMonth>? = null
 
     fun getPhotosByMonth(): List<PhotoMonth> {
-        if (cachedMonths == null) {
-            cachedMonths = groupByMonth(loadAllPhotos())
+        return cachedMonths ?: synchronized(this) {
+            cachedMonths ?: groupByMonth(loadAllPhotos()).also { cachedMonths = it }
         }
-        return cachedMonths ?: emptyList()
     }
 
     fun invalidateCache() {
@@ -61,9 +62,10 @@ class PhotoRepository private constructor(private val context: Context) {
             throw RuntimeException("Failed to load photos and videos from MediaStore")
         }
 
-        return photos.sortedByDescending { it.dateTaken }
+        return photos
     }
 
+    @Suppress("DEPRECATION")
     private fun loadImages(): List<Photo> {
         val photos = mutableListOf<Photo>()
         val resolver = context.contentResolver
@@ -117,9 +119,24 @@ class PhotoRepository private constructor(private val context: Context) {
             }
         }
 
-        return photos
+        return applyThumbnails(photos, ImageThumbnails.EXTERNAL_CONTENT_URI, ImageThumbnails.IMAGE_ID)
     }
 
+    private fun applyThumbnails(
+        photos: List<Photo>,
+        thumbnailsUri: Uri,
+        idColumn: String,
+    ): List<Photo> {
+        if (photos.isEmpty()) return photos
+        val thumbMap = loadThumbnailMap(photos.mapTo(HashSet()) { it.id }, thumbnailsUri, idColumn)
+        if (thumbMap.isEmpty()) return photos
+        return photos.map { photo ->
+            val thumb = thumbMap[photo.id]
+            if (thumb != null) photo.copy(thumbnailUri = thumb) else photo
+        }
+    }
+
+    @Suppress("DEPRECATION")
     private fun loadVideos(): List<Photo> {
         val photos = mutableListOf<Photo>()
         val resolver = context.contentResolver
@@ -173,7 +190,29 @@ class PhotoRepository private constructor(private val context: Context) {
             }
         }
 
-        return photos
+        return applyThumbnails(photos, VideoThumbnails.EXTERNAL_CONTENT_URI, VideoThumbnails.VIDEO_ID)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun loadThumbnailMap(ids: Set<Long>, thumbnailsUri: Uri, idColumn: String): Map<Long, Uri> {
+        if (ids.isEmpty()) return emptyMap()
+        val result = HashMap<Long, Uri>()
+        try {
+            val projection = arrayOf(idColumn, ImageThumbnails._ID)
+            context.contentResolver.query(thumbnailsUri, projection, null, null, null)?.use { cursor ->
+                val ownerCol = cursor.getColumnIndexOrThrow(idColumn)
+                val thumbCol = cursor.getColumnIndexOrThrow(ImageThumbnails._ID)
+                while (cursor.moveToNext()) {
+                    val ownerId = cursor.getLong(ownerCol)
+                    if (ownerId in ids) {
+                        result[ownerId] = ContentUris.withAppendedId(thumbnailsUri, cursor.getLong(thumbCol))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("PhotoRepository", "Failed to load thumbnails", e)
+        }
+        return result
     }
 
     fun groupByMonth(photos: List<Photo>): List<PhotoMonth> {

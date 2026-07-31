@@ -13,8 +13,6 @@ data class Photo(
     val mimeType: String,
     val width: Int,
     val height: Int,
-    val latitude: Double? = null,
-    val longitude: Double? = null,
 ) {
     val isVideo: Boolean get() = mimeType.startsWith("video/")
 }

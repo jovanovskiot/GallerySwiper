@@ -25,6 +25,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -84,30 +85,36 @@ fun SwipeableCard(
 
     val undoConfirmation = stringResource(R.string.undo_confirmation)
 
-    val player = remember(imageUri) {
+    val player = remember {
+        ExoPlayer.Builder(context).build().apply {
+            repeatMode = Player.REPEAT_MODE_ONE
+            playWhenReady = false
+            volume = 0f
+        }
+    }
+
+    LaunchedEffect(imageUri) {
+        player.playWhenReady = false
         if (isVideo) {
-            ExoPlayer.Builder(context).build().apply {
-                setMediaItem(MediaItem.fromUri(imageUri.toUri()))
-                repeatMode = Player.REPEAT_MODE_ONE
-                playWhenReady = false
-                volume = 0f
-            }
-        } else null
+            player.setMediaItem(MediaItem.fromUri(imageUri.toUri()))
+        } else {
+            player.clearMediaItems()
+        }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    DisposableEffect(imageUri, lifecycleOwner) {
+    DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE) {
-                player?.playWhenReady = false
+                player.playWhenReady = false
                 isVideoPlaying = false
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            player?.release()
+            player.release()
         }
     }
 
@@ -166,23 +173,22 @@ fun SwipeableCard(
         ) {
             Box {
                 if (isVideo && isVideoPlaying) {
-                    player?.let { exo ->
-                        AndroidView(
-                            factory = { ctx ->
-                                PlayerView(ctx).also { pv ->
-                                    pv.player = exo
-                                    pv.useController = false
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.Black),
-                        )
-                    }
+                    AndroidView(
+                        factory = { ctx ->
+                            PlayerView(ctx).also { pv ->
+                                pv.player = player
+                                pv.useController = false
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black),
+                    )
                 } else {
                     AsyncImage(
                         model = ImageRequest.Builder(context)
                             .data(imageUri)
+                            .size(2400)
                             .crossfade(true)
                             .build(),
                         contentDescription = null,
@@ -198,9 +204,9 @@ fun SwipeableCard(
                         onClick = {
                             isVideoPlaying = !isVideoPlaying
                             if (isVideoPlaying) {
-                                player?.takeIf { it.playbackState == Player.STATE_IDLE }?.prepare()
+                                if (player.playbackState == Player.STATE_IDLE) player.prepare()
                             }
-                            player?.playWhenReady = isVideoPlaying
+                            player.playWhenReady = isVideoPlaying
                         },
                         modifier = Modifier
                             .align(Alignment.Center)

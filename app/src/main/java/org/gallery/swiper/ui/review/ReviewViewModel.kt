@@ -2,9 +2,9 @@ package org.gallery.swiper.ui.review
 
 import android.app.Application
 import android.content.IntentSender
-import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.gallery.swiper.data.AppDatabase
 import org.gallery.swiper.data.entity.BookmarkEntity
@@ -45,6 +47,8 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
 
     private var monthKey: String = ""
     private var bookmarkedPhotoIds: Set<Long> = emptySet()
+
+    private val decisionMutex = Mutex()
 
     fun loadDecisions(key: String) {
         monthKey = key
@@ -90,23 +94,25 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun updateInDb(photo: Photo, decision: Decision) {
         viewModelScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    swipeDecisionDao.removeDecision(photo.id, monthKey)
-                    swipeDecisionDao.upsert(
-                        SwipeDecisionEntity(
-                            monthKey = monthKey, photoId = photo.id,
-                            uri = photo.uri.toString(), decision = decision.name,
-                            size = photo.size, mimeType = photo.mimeType,
-                            dateTaken = photo.dateTaken,
-                            width = photo.width,
-                            height = photo.height,
-                            isCommitted = false,
+            decisionMutex.withLock {
+                try {
+                    withContext(Dispatchers.IO) {
+                        swipeDecisionDao.removeDecision(photo.id, monthKey)
+                        swipeDecisionDao.upsert(
+                            SwipeDecisionEntity(
+                                monthKey = monthKey, photoId = photo.id,
+                                uri = photo.uri.toString(), decision = decision.name,
+                                size = photo.size, mimeType = photo.mimeType,
+                                dateTaken = photo.dateTaken,
+                                width = photo.width,
+                                height = photo.height,
+                                isCommitted = false,
+                            )
                         )
-                    )
+                    }
+                } catch (e: Exception) {
+                    Log.e("ReviewViewModel", "Failed to update decision", e)
                 }
-            } catch (e: Exception) {
-                Log.e("ReviewViewModel", "Failed to update decision", e)
             }
         }
     }
@@ -145,12 +151,10 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                 val deleteUris = state.deletePhotos.map { it.uri }
 
                 // Only trash files when NOT coming from the IntentSender path
-                var trashFailed = false
-                if (!fromIntentSender && deleteUris.isNotEmpty()) {
-                    trashFailed = !repository.sendToTrash(deleteUris)
-                    if (trashFailed) {
-                        Log.e("ReviewViewModel", "Failed to trash photos")
-                    }
+                val trashFailed = !fromIntentSender && deleteUris.isNotEmpty() &&
+                        !repository.sendToTrash(deleteUris)
+                if (trashFailed) {
+                    Log.e("ReviewViewModel", "Failed to trash photos")
                 }
 
                 // Invalidate cache so gallery reloads fresh
@@ -232,7 +236,7 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
     private fun entityToPhoto(entity: SwipeDecisionEntity): Photo {
         return Photo(
             id = entity.photoId,
-            uri = Uri.parse(entity.uri),
+            uri = entity.uri.toUri(),
             dateTaken = entity.dateTaken,
             size = entity.size,
             mimeType = entity.mimeType,
